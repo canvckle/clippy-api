@@ -1,0 +1,22 @@
+type Query {
+  profile: ProfileResponse
+}
+
+type Mutation {
+  addUsername(username: String): SetUsernameResponse
+}
+
+type Subscription {
+  numberIncremented: Int
+}
+
+# Profile
+type ProfileResponse {
+  username: String
+  xp: Int
+}
+
+type SetUsernameResponse {
+  username: String
+  error: String
+}
