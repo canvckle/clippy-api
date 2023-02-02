@@ -29,7 +29,7 @@ initializeApp({
   projectId: 'clippy-hackathon'
 })
 
-const PORT = 4000;
+const PORT = process.env.PORT || 4000;
 const pubsub = new PubSub();
 
 // Schema definition
