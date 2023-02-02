@@ -1,9 +1,11 @@
 type Query {
   profile: ProfileResponse
+  quiz(eventId: String): Quiz
 }
 
 type Mutation {
   addUsername(username: String): SetUsernameResponse
+  addQuiz(eventId: String, quiz: Quiz): AddQuizResponse
 }
 
 type Subscription {
@@ -19,4 +21,39 @@ type ProfileResponse {
 type SetUsernameResponse {
   username: String
   error: String
+}
+
+# Picks
+type AddQuizResponse {
+  success: Boolean
+  error: String
+}
+
+enum EventState {
+  PREGAME
+  LIVE
+  FINAL
+}
+
+type QuizMetadata {
+  name: String!
+  eventState: EventState!
+}
+
+type QuizOption {
+  id: ID!
+  name: String!
+}
+
+type QuizQuestion {
+  id: ID!
+  name: String!
+  options: [QuizOption]!
+  xp: Int!
+  answerTime: Int
+}
+
+type Quiz {
+  metadata: QuizMetadata!
+  questions: [QuizQuestion]!
 }

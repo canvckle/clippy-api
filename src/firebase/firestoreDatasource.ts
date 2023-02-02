@@ -1,8 +1,9 @@
 import { getFirestore } from 'firebase-admin/firestore'
 
 export class FirebaseDataSource {
-  private firestore: FirebaseFirestore.Firestore
+  public firestore: FirebaseFirestore.Firestore
   private profilesCollection = 'profiles'
+  private quizDocument = 'quiz'
 
   constructor() {
     this.firestore = getFirestore()
@@ -10,6 +11,10 @@ export class FirebaseDataSource {
 
   async retrieveProfile(uid: string) {
     return await this.firestore.collection(this.profilesCollection).doc(uid).get()
+  }
+
+  async retrieveQuizes(eventId: string) {
+    return await this.firestore.collection(eventId).doc(this.quizDocument).get()
   }
 
   async setUsername(uid: string, username: string) {

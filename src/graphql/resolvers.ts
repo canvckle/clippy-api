@@ -1,4 +1,5 @@
 import { DocumentSnapshot } from "firebase-admin/firestore";
+import { GraphQLError } from "graphql";
 import { AppContext, ProfileResponse, SetUsernameResponse } from "../types/types";
 
 /*
@@ -19,6 +20,20 @@ const retrieveProfileResolver = async (parent, _, context: AppContext, info) => 
     return errorResponse
   }
 }
+
+const retrieveQuizesResolver = async (parent, { eventId }, context: AppContext, info) => {
+  try {
+    const response: DocumentSnapshot<ProfileResponse> = await context.dataSources.firestore.retrieveQuizes(eventId)
+    if (response.exists) {
+      return response.data()
+    } else {
+      return {}
+    }
+  } catch (error) {
+    throw new GraphQLError('Failed to retrieve quizes')
+  }
+}
+
 /*
   Mutation Resolvers
 */
@@ -37,6 +52,4 @@ const addUsernameResolver = async (parent, { username }, context: AppContext, in
   }
 }
 
-
-
-export { addUsernameResolver, retrieveProfileResolver }
+export { addUsernameResolver, retrieveProfileResolver, retrieveQuizesResolver }

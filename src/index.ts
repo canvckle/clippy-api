@@ -1,10 +1,10 @@
-import * as dotenv from 'dotenv'
-dotenv.config()
+import * as dotenv from "dotenv";
+dotenv.config();
 import { ApolloServer } from "@apollo/server";
 import { expressMiddleware } from "@apollo/server/express4";
 import { ApolloServerPluginDrainHttpServer } from "@apollo/server/plugin/drainHttpServer";
 import express from "express";
-import { createServer } from "http";
+import { createServer, request } from "http";
 import { makeExecutableSchema } from "@graphql-tools/schema";
 import { WebSocketServer } from "ws";
 import { useServer } from "graphql-ws/lib/use/ws";
@@ -15,19 +15,24 @@ import { verifyToken } from "./authentication/login.js";
 import { GraphQLError } from "graphql";
 import { FirebaseDataSource } from "./firebase/firestoreDatasource.js";
 import { AppContext } from "./types/types.js";
-import { addUsernameResolver, retrieveProfileResolver } from "./graphql/resolvers.js";
-import { initializeApp } from 'firebase-admin/app';
-import pkg from 'firebase-admin';
+import {
+  addUsernameResolver,
+  retrieveProfileResolver,
+  retrieveQuizesResolver,
+} from "./graphql/resolvers.js";
+import { initializeApp } from "firebase-admin/app";
+import pkg from "firebase-admin";
+import { adminRoutes } from "./admin/admin.js";
 const { credential } = pkg;
 
 initializeApp({
   credential: credential.cert({
-    'projectId': process.env.FIREBASE_PROJECT_ID,
-    'privateKey': process.env.FIREBASE_PRIVATE_KEY,
-    'clientEmail': process.env.FIREBASE_CLIENT_EMAIL
+    projectId: process.env.FIREBASE_PROJECT_ID,
+    privateKey: process.env.FIREBASE_PRIVATE_KEY,
+    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
   }),
-  projectId: 'clippy-hackathon'
-})
+  projectId: "clippy-hackathon",
+});
 
 const PORT = process.env.PORT || 4000;
 const pubsub = new PubSub();
@@ -36,6 +41,7 @@ const pubsub = new PubSub();
 const typeDefs = `#graphql
   type Query {
     profile: ProfileResponse
+    quiz(eventId: String): Quiz
   }
 
   type Mutation {
@@ -56,12 +62,44 @@ const typeDefs = `#graphql
     username: String
     error: String
   }
+
+  # Picks
+  enum EventState {
+    PREGAME
+    LIVE
+    FINAL
+  }
+
+  type QuizMetadata {
+    name: String!
+    eventState: EventState!
+  }
+
+  type QuizOption {
+    id: ID!
+    name: String!
+  }
+
+  type QuizQuestion {
+    id: ID!
+    name: String!
+    options: [QuizOption]!
+    xp: Int!
+    answerTime: Int
+  }
+
+  type Quiz {
+    id: ID!
+    metadata: QuizMetadata!
+    questions: [QuizQuestion]!
+  }
 `;
 
 // Resolver map
 const resolvers = {
   Query: {
     profile: retrieveProfileResolver,
+    quiz: retrieveQuizesResolver
   },
   Mutation: {
     addUsername: addUsernameResolver
@@ -91,13 +129,12 @@ const wsServer = new WebSocketServer({
 const serverCleanup = useServer(
   {
     context: async (ctx, msg, args) => {
-      return { token: 'Test' }
+      return { token: "Test" };
     },
     schema,
   },
   wsServer
 );
-
 
 // Set up ApolloServer.
 const server = new ApolloServer<AppContext>({
@@ -123,39 +160,55 @@ app.use(
   "/graphql",
   cors<cors.CorsRequest>(),
   bodyParser.json(),
-  expressMiddleware(server, { context: async ({ req }) => {
-    let context: AppContext = {
-      dataSources: {
-        firestore: new FirebaseDataSource()
+  expressMiddleware(server, {
+    context: async ({ req }) => {
+      
+      let context: AppContext = {
+        dataSources: {
+          firestore: new FirebaseDataSource(),
+        },
+      };
+      var isIntroSpection = false
+
+      const token = req.headers.authorization || "";
+
+      if (req.body.operationName === "IntrospectionQuery") {
+        isIntroSpection = true
       }
-    }
 
-    const token = req.headers.authorization || '';
-    if (token) {
-      const uid = await verifyToken(token)
+      if (token) {
+        const uid = await verifyToken(token);
 
-      if (uid) {
-        context.userId = uid
-        return context
-      } else {
-        throw new GraphQLError('User is not authenticated', {
-          extensions: {
-            code: 'UNAUTHENTICATED',
-            http: { status: 401 }
+        if (uid) {
+          context.userId = uid;
+          return context;
+        } else {
+          if (isIntroSpection) {
+            return context
           }
-        })
-      }
-    } else {
-      throw new GraphQLError('No authorization token provided', { 
-        extensions: {
-          code: 'UNAUTHENTICATED',
-          http: { status: 401 }
+          throw new GraphQLError("User is not authenticated", {
+            extensions: {
+              code: "UNAUTHENTICATED",
+              http: { status: 401 },
+            },
+          });
         }
-      })
-    }
-    
-  } })
+      } else {
+        if (isIntroSpection) {
+          return context
+        }
+        throw new GraphQLError("No authorization token provided", {
+          extensions: {
+            code: "UNAUTHENTICATED",
+            http: { status: 401 },
+          },
+        });
+      }
+    },
+  })
 );
+
+adminRoutes(app, cors<cors.CorsRequest>(), bodyParser.json())
 
 // Now that our HTTP server is fully set up, actually listen.
 httpServer.listen(PORT, () => {
@@ -175,3 +228,4 @@ function incrementNumber() {
 
 // Start incrementing
 // incrementNumber();
+
