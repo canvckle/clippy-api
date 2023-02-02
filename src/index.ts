@@ -1,3 +1,5 @@
+import * as dotenv from 'dotenv'
+dotenv.config()
 import { ApolloServer } from "@apollo/server";
 import { expressMiddleware } from "@apollo/server/express4";
 import { ApolloServerPluginDrainHttpServer } from "@apollo/server/plugin/drainHttpServer";
@@ -14,10 +16,16 @@ import { GraphQLError } from "graphql";
 import { FirebaseDataSource } from "./firebase/firestoreDatasource.js";
 import { AppContext } from "./types/types.js";
 import { addUsernameResolver, retrieveProfileResolver } from "./graphql/resolvers.js";
-import { applicationDefault, initializeApp } from 'firebase-admin/app';
+import { initializeApp } from 'firebase-admin/app';
+import pkg from 'firebase-admin';
+const { credential } = pkg;
 
 initializeApp({
-  credential: applicationDefault(),
+  credential: credential.cert({
+    'projectId': process.env.FIREBASE_PROJECT_ID,
+    'privateKey': process.env.FIREBASE_PRIVATE_KEY,
+    'clientEmail': process.env.FIREBASE_CLIENT_EMAIL
+  }),
   projectId: 'clippy-hackathon'
 })
 
