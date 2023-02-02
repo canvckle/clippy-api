@@ -17,6 +17,7 @@ import { FirebaseDataSource } from "./firebase/firestoreDatasource.js";
 import { AppContext } from "./types/types.js";
 import {
   addUsernameResolver,
+  retrieveLeaderboardResolver,
   retrieveProfileResolver,
   retrieveQuizesResolver,
 } from "./graphql/resolvers.js";
@@ -42,6 +43,7 @@ const typeDefs = `#graphql
   type Query {
     profile: ProfileResponse
     quiz(eventId: String): Quiz
+    leaderboard: [ProfileResponse]
   }
 
   type Mutation {
@@ -84,6 +86,7 @@ const typeDefs = `#graphql
     id: ID!
     name: String!
     options: [QuizOption]!
+    correctAnswer: ID
     xp: Int!
     answerTime: Int
   }
@@ -99,7 +102,8 @@ const typeDefs = `#graphql
 const resolvers = {
   Query: {
     profile: retrieveProfileResolver,
-    quiz: retrieveQuizesResolver
+    quiz: retrieveQuizesResolver,
+    leaderboard: retrieveLeaderboardResolver
   },
   Mutation: {
     addUsername: addUsernameResolver

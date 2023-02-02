@@ -17,9 +17,19 @@ export class FirebaseDataSource {
     return await this.firestore.collection(eventId).doc(this.quizDocument).get()
   }
 
+  async retrieveLeaderboard() {
+    return await this.firestore.collection(this.profilesCollection).orderBy('xp').limit(25).get()
+  }
+
   async setUsername(uid: string, username: string) {
     return await this.firestore.collection(this.profilesCollection).doc(uid).set({
       username: username
+    }, { merge: true })
+  }
+  
+  async setXp(uid: string, xp: number) {
+    return await this.firestore.collection(this.profilesCollection).doc(uid).set({
+      xp: xp
     }, { merge: true })
   }
 }
