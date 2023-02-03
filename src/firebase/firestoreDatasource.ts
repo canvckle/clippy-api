@@ -1,4 +1,5 @@
-import { FieldValue, getFirestore } from 'firebase-admin/firestore'
+import { DocumentSnapshot, FieldValue, getFirestore } from 'firebase-admin/firestore'
+import { ProfileResponse } from '../types/types'
 
 export class FirebaseDataSource {
   public firestore: FirebaseFirestore.Firestore
@@ -34,6 +35,34 @@ export class FirebaseDataSource {
   }
 
   async answerQuestion(uid: string, eventId: string, questionId: string, answerId: string) {
+    var response = await this.firestore.collection(eventId).doc(this.quizDocument).get()
+    if (response.exists) {
+      var data = response.data()
+      var questions = data.questions.map(question => {
+        if (question.id == questionId) {
+          var options = question.options.map(option => {
+            if (option.id == answerId) {
+              if (option.hasOwnProperty('totalAnswers')) {
+                option.totalAnswers = ++option.totalAnswers
+              }
+              else {
+                option.totalAnswers = 1
+              }
+            }
+            return option
+          })
+          console.log(options)
+          question.options = options
+        }
+        return question
+      })
+      console.log(questions)
+      await this.firestore.collection(eventId).doc(this.quizDocument)
+        .update({
+          [`questions`]: questions
+        })
+    }
+
     return await this.firestore.collection(this.profilesCollection).doc(uid).update({
       answers: FieldValue.arrayUnion({ eventId, questionId, answerId })
     })

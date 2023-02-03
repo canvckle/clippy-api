@@ -95,6 +95,7 @@ const typeDefs = `#graphql
   type QuizOption {
     id: ID!
     name: String!
+    totalAnswers: Int
   }
 
   type QuizQuestion {
@@ -128,6 +129,7 @@ const resolvers = {
     quizQuestionUpdated: {
       subscribe: quizQuestionUpdatedResolver,
     },
+    
   },
 };
 

@@ -23,6 +23,13 @@ type Query {
   type ProfileResponse {
     username: String
     xp: Int
+    answers: [Answers]
+  }
+
+  type Answers {
+    answerId: String
+    eventId: String
+    questionId: String
   }
 
   type SetUsernameResponse {
@@ -45,6 +52,7 @@ type Query {
   type QuizOption {
     id: ID!
     name: String!
+    totalAnswers: Int
   }
 
   type QuizQuestion {

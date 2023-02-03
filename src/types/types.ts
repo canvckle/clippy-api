@@ -20,4 +20,11 @@ export interface SetUsernameResponse {
 export interface ProfileResponse {
   username?: string
   xp?: number
+  answers?: [AnswerQuestionResponse]
+}
+
+export interface AnswerQuestionResponse {
+  eventId?: string
+  questionId?: string
+  answerId?: string
 }
