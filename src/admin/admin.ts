@@ -32,8 +32,21 @@ const adminRoutes = (app, cors, bodyParser) => {
         .update({
           [`questions`]: questions
         })
+      
+      var correctUsers = await firestoreDatasource.firestore
+        .collection('profiles')
+        .where('answers', 'array-contains', { eventId: req.body.eventId, answerId: req.body.correctAnswerId, questionId: req.body.questionId })
+        .get()
+        correctUsers.docs.forEach( async (doc) => {
+          var current = doc.data()
+          var question = questions.find(question => question.id === req.body.questionId)
+          console.log(`adding ${question.xp}xp to ${doc.id}`)
+          await firestoreDatasource.setXp(doc.id, current.xp + question.xp)
+        })
     }
     
+    
+    console.log()
     res.sendStatus(200)
   })
 }
