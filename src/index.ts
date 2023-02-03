@@ -87,6 +87,11 @@ const typeDefs = `#graphql
     FINAL
   }
 
+  enum QuestionType {
+    TRIVIA
+    PREGAME
+  }
+
   type QuizMetadata {
     name: String!
     eventState: EventState!
@@ -100,6 +105,7 @@ const typeDefs = `#graphql
 
   type QuizQuestion {
     id: ID!
+    type: QuestionType!
     name: String!
     options: [QuizOption]!
     correctAnswer: ID
@@ -110,7 +116,7 @@ const typeDefs = `#graphql
   type Quiz {
     id: ID!
     metadata: QuizMetadata!
-    questions: [QuizQuestion]!
+    questions: [QuizQuestion!]!
   }
 `;
 
@@ -227,24 +233,26 @@ app.use(
         } else {
           if (isIntroSpection) {
             return context
+          } else {
+            throw new GraphQLError("User is not authenticated", {
+              extensions: {
+                code: "UNAUTHENTICATED",
+                http: { status: 401 },
+              },
+            });
           }
-          throw new GraphQLError("User is not authenticated", {
+        }
+      } else {
+        if (isIntroSpection) {
+          return context
+        } else {
+          throw new GraphQLError("No authorization token provided", {
             extensions: {
               code: "UNAUTHENTICATED",
               http: { status: 401 },
             },
           });
         }
-      } else {
-        if (isIntroSpection) {
-          return context
-        }
-        throw new GraphQLError("No authorization token provided", {
-          extensions: {
-            code: "UNAUTHENTICATED",
-            http: { status: 401 },
-          },
-        });
       }
     },
   })

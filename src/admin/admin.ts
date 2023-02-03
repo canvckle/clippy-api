@@ -1,3 +1,4 @@
+import { FieldValue } from "firebase-admin/firestore"
 import { FirebaseDataSource } from "../firebase/firestoreDatasource.js"
 import { pubsub, QUIZ_UPDATED_NAME } from "../subscriptions/PubSub.js"
 
@@ -10,6 +11,18 @@ const adminRoutes = (app, cors, bodyParser) => {
       .collection(req.body.eventId)
       .doc(`quiz`)
       .set(req.body.quiz)
+    res.sendStatus(200)
+  })
+
+  app.post('/add/quiz/live/question', cors, bodyParser, async (req, res) => {
+    let firestoreDatasource = new FirebaseDataSource()
+    console.log(req.body)
+    await firestoreDatasource.firestore
+      .collection(req.body.eventId)
+      .doc(`quiz`)
+      .update({
+        questions: FieldValue.arrayUnion(req.body.question)
+      })
     res.sendStatus(200)
   })
 
@@ -44,9 +57,7 @@ const adminRoutes = (app, cors, bodyParser) => {
           await firestoreDatasource.setXp(doc.id, current.xp + question.xp)
         })
     }
-    
-    
-    console.log()
+
     res.sendStatus(200)
   })
 }
