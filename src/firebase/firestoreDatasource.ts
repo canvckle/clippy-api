@@ -19,7 +19,7 @@ export class FirebaseDataSource {
   }
 
   async retrieveLeaderboard() {
-    return await this.firestore.collection(this.profilesCollection).orderBy('xp').limit(25).get()
+    return await this.firestore.collection(this.profilesCollection).orderBy('xp', 'desc').limit(25).get()
   }
 
   async setUsername(uid: string, username: string) {
