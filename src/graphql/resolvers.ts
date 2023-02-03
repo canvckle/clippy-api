@@ -75,7 +75,21 @@ const answerQuestionResolver = async (parent, { eventId, questionId, answerId },
   }
 }
 
-
+const setXpResolver = async (parent, { xp }, context: AppContext, info) => {
+  try {
+    const response = await context.dataSources.firestore.retrieveProfile(context.userId)
+    if (response.exists) {
+      var currentXp = response.data().xp
+      await context.dataSources.firestore.setXp(context.userId, currentXp + xp)
+      return { xp: currentXp + xp }
+    } else {
+      return { xp }
+    }
+  } catch (error) {
+    console.log(error)
+    return {}
+  }
+}
 
 /*
   Subscripition Resolvers
@@ -96,4 +110,4 @@ const quizQuestionUpdatedResolver = async (parent, { eventId }, context: AppCont
   return context.pubSub.asyncIterator([QUIZ_UPDATED_NAME])
 }
 
-export { answerQuestionResolver, quizQuestionUpdatedResolver, addUsernameResolver, retrieveProfileResolver, retrieveQuizesResolver, retrieveLeaderboardResolver }
+export { setXpResolver, answerQuestionResolver, quizQuestionUpdatedResolver, addUsernameResolver, retrieveProfileResolver, retrieveQuizesResolver, retrieveLeaderboardResolver }

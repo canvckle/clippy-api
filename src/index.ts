@@ -22,6 +22,7 @@ import {
   retrieveLeaderboardResolver,
   retrieveProfileResolver,
   retrieveQuizesResolver,
+  setXpResolver,
 } from "./graphql/resolvers.js";
 import { initializeApp } from "firebase-admin/app";
 import pkg from "firebase-admin";
@@ -50,6 +51,7 @@ const typeDefs = `#graphql
   type Mutation {
     addUsername(username: String!): SetUsernameResponse
     answerQuestion(eventId: String! questionId: String!, answerId: String!): AnswerQuestionResponse
+    addXp(xp: Int!): SetXpResponse
   }
 
   type Subscription {
@@ -60,6 +62,10 @@ const typeDefs = `#graphql
     eventId: String
     questionId: String
     answerId: String
+  }
+
+  type SetXpResponse {
+    xp: Int
   }
 
   # Profile
@@ -129,7 +135,8 @@ const resolvers = {
   },
   Mutation: {
     addUsername: addUsernameResolver,
-    answerQuestion: answerQuestionResolver
+    answerQuestion: answerQuestionResolver,
+    addXp: setXpResolver
   },
   Subscription: {
     quizQuestionUpdated: {
