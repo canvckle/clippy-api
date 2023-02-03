@@ -1,4 +1,4 @@
-import { getFirestore } from 'firebase-admin/firestore'
+import { FieldValue, getFirestore } from 'firebase-admin/firestore'
 
 export class FirebaseDataSource {
   public firestore: FirebaseFirestore.Firestore
@@ -31,5 +31,11 @@ export class FirebaseDataSource {
     return await this.firestore.collection(this.profilesCollection).doc(uid).set({
       xp: xp
     }, { merge: true })
+  }
+
+  async answerQuestion(uid: string, eventId: string, questionId: string, answerId: string) {
+    return await this.firestore.collection(this.profilesCollection).doc(uid).update({
+      answers: FieldValue.arrayUnion({ eventId, questionId, answerId })
+    })
   }
 }

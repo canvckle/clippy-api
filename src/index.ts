@@ -8,7 +8,7 @@ import { createServer, request } from "http";
 import { makeExecutableSchema } from "@graphql-tools/schema";
 import { WebSocketServer } from "ws";
 import { useServer } from "graphql-ws/lib/use/ws";
-import { PubSub } from "graphql-subscriptions";
+import { pubsub, QUIZ_UPDATED_NAME } from './subscriptions/PubSub.js'
 import bodyParser from "body-parser";
 import cors from "cors";
 import { verifyToken } from "./authentication/login.js";
@@ -17,6 +17,8 @@ import { FirebaseDataSource } from "./firebase/firestoreDatasource.js";
 import { AppContext } from "./types/types.js";
 import {
   addUsernameResolver,
+  answerQuestionResolver,
+  quizQuestionUpdatedResolver,
   retrieveLeaderboardResolver,
   retrieveProfileResolver,
   retrieveQuizesResolver,
@@ -36,28 +38,41 @@ initializeApp({
 });
 
 const PORT = process.env.PORT || 4000;
-const pubsub = new PubSub();
 
 // Schema definition
 const typeDefs = `#graphql
   type Query {
     profile: ProfileResponse
-    quiz(eventId: String): Quiz
+    quiz(eventId: String!): Quiz
     leaderboard: [ProfileResponse]
   }
 
   type Mutation {
-    addUsername(username: String): SetUsernameResponse
+    addUsername(username: String!): SetUsernameResponse
+    answerQuestion(eventId: String! questionId: String!, answerId: String!): AnswerQuestionResponse
   }
 
   type Subscription {
-    numberIncremented: Int
+    quizQuestionUpdated(eventId: String!): Quiz
+  }
+
+  type AnswerQuestionResponse {
+    eventId: String
+    questionId: String
+    answerId: String
   }
 
   # Profile
   type ProfileResponse {
     username: String
     xp: Int
+    answers: [Answers]
+  }
+
+  type Answers {
+    answerId: String
+    eventId: String
+    questionId: String
   }
 
   type SetUsernameResponse {
@@ -106,11 +121,12 @@ const resolvers = {
     leaderboard: retrieveLeaderboardResolver
   },
   Mutation: {
-    addUsername: addUsernameResolver
+    addUsername: addUsernameResolver,
+    answerQuestion: answerQuestionResolver
   },
   Subscription: {
-    numberIncremented: {
-      subscribe: () => pubsub.asyncIterator(["NUMBER_INCREMENTED"]),
+    quizQuestionUpdated: {
+      subscribe: quizQuestionUpdatedResolver,
     },
   },
 };
@@ -133,7 +149,26 @@ const wsServer = new WebSocketServer({
 const serverCleanup = useServer(
   {
     context: async (ctx, msg, args) => {
-      return { token: "Test" };
+      let context: AppContext = {
+        pubSub: pubsub,
+        dataSources: {
+          firestore: new FirebaseDataSource(),
+        },
+      };
+      const token = ctx.connectionParams['Authorization'] as string || "";
+
+      if (token) {
+        const uid = await verifyToken(token);
+        console.log(uid)
+        if (uid) {
+          context.userId = uid;
+          return context;
+        } else {
+          return {}
+        }
+      } else {
+        return {}
+      }
     },
     schema,
   },
@@ -168,6 +203,7 @@ app.use(
     context: async ({ req }) => {
       
       let context: AppContext = {
+        pubSub: pubsub,
         dataSources: {
           firestore: new FirebaseDataSource(),
         },
@@ -221,15 +257,3 @@ httpServer.listen(PORT, () => {
     `🚀 Subscription endpoint ready at ws://localhost:${PORT}/graphql`
   );
 });
-
-// In the background, increment a number every second and notify subscribers when it changes.
-let currentNumber = 0;
-function incrementNumber() {
-  currentNumber++;
-  pubsub.publish("NUMBER_INCREMENTED", { numberIncremented: currentNumber });
-  setTimeout(incrementNumber, 1000);
-}
-
-// Start incrementing
-// incrementNumber();
-

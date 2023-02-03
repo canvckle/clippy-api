@@ -1,5 +1,6 @@
 import { DocumentData, DocumentSnapshot, QueryDocumentSnapshot } from "firebase-admin/firestore";
 import { GraphQLError } from "graphql";
+import { pubsub, QUIZ_UPDATED_NAME } from "../subscriptions/PubSub.js";
 import { AppContext, ProfileResponse, SetUsernameResponse } from "../types/types";
 
 /*
@@ -64,4 +65,35 @@ const addUsernameResolver = async (parent, { username }, context: AppContext, in
   }
 }
 
-export { addUsernameResolver, retrieveProfileResolver, retrieveQuizesResolver, retrieveLeaderboardResolver }
+const answerQuestionResolver = async (parent, { eventId, questionId, answerId }, context: AppContext, info) => {
+  try {
+    await context.dataSources.firestore.answerQuestion(context.userId, eventId, questionId, answerId)
+    return { eventId, questionId, answerId }
+  } catch (error) {
+    console.log(error)
+    return {}
+  }
+}
+
+
+
+/*
+  Subscripition Resolvers
+*/
+
+const quizQuestionUpdatedResolver = async (parent, { eventId }, context: AppContext, info) => {
+  // console.log(context)
+  await context.dataSources.firestore.firestore.collection(eventId).doc(`quiz`).onSnapshot(docSnapshot => {
+    console.log(docSnapshot.data())
+    context.pubSub.publish(QUIZ_UPDATED_NAME, {
+      quizQuestionUpdated: docSnapshot.data()
+    })
+  }, err => {
+    console.log('error')
+    console.log(err)
+  })
+
+  return context.pubSub.asyncIterator([QUIZ_UPDATED_NAME])
+}
+
+export { answerQuestionResolver, quizQuestionUpdatedResolver, addUsernameResolver, retrieveProfileResolver, retrieveQuizesResolver, retrieveLeaderboardResolver }

@@ -1,3 +1,4 @@
+import { PubSub } from "graphql-subscriptions"
 import { FirebaseDataSource } from "../firebase/firestoreDatasource"
 
 export interface DataSources {
@@ -7,6 +8,7 @@ export interface DataSources {
 export interface AppContext {
   userId?: string
   dataSources: DataSources
+  pubSub: PubSub
 }
 
 // Add Username

@@ -1,56 +1,63 @@
 type Query {
-  profile: ProfileResponse
-  quiz(eventId: String): Quiz
-  leaderboard: [ProfileResponse]
-}
+    profile: ProfileResponse
+    quiz(eventId: String!): Quiz
+    leaderboard: [ProfileResponse]
+  }
 
-type Mutation {
-  addUsername(username: String): SetUsernameResponse
-}
+  type Mutation {
+    addUsername(username: String!): SetUsernameResponse
+    answerQuestion(eventId: String! questionId: String!, answerId: String!): AnswerQuestionResponse
+  }
 
-type Subscription {
-  numberIncremented: Int
-}
+  type Subscription {
+    quizQuestionUpdated(eventId: String!): Quiz
+  }
 
-# Profile
-type ProfileResponse {
-  username: String
-  xp: Int
-}
+  type AnswerQuestionResponse {
+    eventId: String
+    questionId: String
+    answerId: String
+  }
 
-type SetUsernameResponse {
-  username: String
-  error: String
-}
+  # Profile
+  type ProfileResponse {
+    username: String
+    xp: Int
+  }
 
-# Picks
-enum EventState {
-  PREGAME
-  LIVE
-  FINAL
-}
+  type SetUsernameResponse {
+    username: String
+    error: String
+  }
 
-type QuizMetadata {
-  name: String!
-  eventState: EventState!
-}
+  # Picks
+  enum EventState {
+    PREGAME
+    LIVE
+    FINAL
+  }
 
-type QuizOption {
-  id: ID!
-  name: String!
-}
+  type QuizMetadata {
+    name: String!
+    eventState: EventState!
+  }
 
-type QuizQuestion {
-  id: ID!
-  name: String!
-  options: [QuizOption]!
-  correctAnswer: ID
-  xp: Int!
-  answerTime: Int
-}
+  type QuizOption {
+    id: ID!
+    name: String!
+  }
 
-type Quiz {
-  id: ID!
-  metadata: QuizMetadata!
-  questions: [QuizQuestion]!
-}
+  type QuizQuestion {
+    id: ID!
+    name: String!
+    options: [QuizOption]!
+    correctAnswer: ID
+    xp: Int!
+    answerTime: Int
+  }
+
+  type Quiz {
+    id: ID!
+    metadata: QuizMetadata!
+    questions: [QuizQuestion]!
+  }
