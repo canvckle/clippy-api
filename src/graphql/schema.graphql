@@ -1,11 +1,11 @@
 type Query {
   profile: ProfileResponse
   quiz(eventId: String): Quiz
+  leaderboard: [ProfileResponse]
 }
 
 type Mutation {
   addUsername(username: String): SetUsernameResponse
-  addQuiz(eventId: String, quiz: Quiz): AddQuizResponse
 }
 
 type Subscription {
@@ -24,11 +24,6 @@ type SetUsernameResponse {
 }
 
 # Picks
-type AddQuizResponse {
-  success: Boolean
-  error: String
-}
-
 enum EventState {
   PREGAME
   LIVE
@@ -49,11 +44,13 @@ type QuizQuestion {
   id: ID!
   name: String!
   options: [QuizOption]!
+  correctAnswer: ID
   xp: Int!
   answerTime: Int
 }
 
 type Quiz {
+  id: ID!
   metadata: QuizMetadata!
   questions: [QuizQuestion]!
 }
